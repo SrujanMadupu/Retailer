@@ -1,0 +1,8 @@
+# Add any directories, files, or patterns you don't want to be tracked by version control
+retailer/__pycache__
+retailer/views/__pycache__/
+bolo/__pycache__
+retailer/migrations/
+.pytest_cache
+bolo.log
+.idea
