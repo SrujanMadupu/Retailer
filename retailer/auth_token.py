@@ -1,8 +1,8 @@
-from .credentials import client_id, client_secret, auth_url
+from .credentials import auth_url
 import requests
 
 
-def get_bearer_token():
+def get_bearer_token(client_id, client_secret):
     res = requests.post(url=auth_url+'/token',
                         headers={'Content-Type': 'application/x-www-form-urlencoded'},
                         data={'client_id': client_id,

@@ -32,14 +32,15 @@ class ShipmentAPIView(APIView):
     throttle_classes = [ShipmentRateThrottle]
 
     @staticmethod
-    def get_shipment_detail(shipment_id):
+    def get_shipment_detail(shipment_id, user):
         """requesting third party api for shipment_details using shipment id"""
         url = 'https://api.bol.com/retailer/shipments/'+str(shipment_id)
         headers = {'Accept': 'application/vnd.retailer.v3+json',
                    'Authorization': 'Bearer ' + str(read_bearer_token())}
         res = requests.get(url=url, headers=headers, verify=False)
         if res.status_code == 401:
-            get_bearer_token()
+            obj_retailer = Retailer.objects.get(email=user.email)
+            get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
             headers.update({'Authorization': 'Bearer ' + str(read_bearer_token())})
             res = requests.get(url=url, headers=headers, verify=False)
             return res.json()
@@ -47,7 +48,7 @@ class ShipmentAPIView(APIView):
             return res.json()
 
     @staticmethod
-    def get_shipment(url, method, headers):
+    def get_shipment(url, method, headers, user):
         """requesting third party api for shipments"""
         page = 1
         while page:
@@ -56,7 +57,8 @@ class ShipmentAPIView(APIView):
             res = requests.get(url=new_url, headers=headers, verify=False)
             res_json = res.json()
             if res.status_code == 401:
-                get_bearer_token()
+                obj_retailer = Retailer.objects.get(email=user.email)
+                get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
                 headers.update({'Authorization': 'Bearer ' + str(read_bearer_token())})
                 res = requests.get(url=new_url, headers=headers, verify=False)
                 page = page + 1
@@ -117,14 +119,14 @@ class ShipmentAPIView(APIView):
         shipment_ids = []
         print(">>>>> initially shipments >>>", shipments)
         for method in ff_methods:
-            shipment_gen = ShipmentAPIView.get_shipment(url, method, headers)
+            shipment_gen = ShipmentAPIView.get_shipment(url, method, headers, user)
             for sh in shipment_gen:
                 shipment_ids += [record['shipmentId'] for record in sh['shipments']]
                 print(">>> for method {0} shipments {1}".format(method, shipment_ids))
             del shipment_gen
         for sh_id in shipment_ids:
             if not Shipment.objects.filter(shipmentId=sh_id).exists():
-                shipments['shipments'].append(ShipmentAPIView.get_shipment_detail(sh_id))
+                shipments['shipments'].append(ShipmentAPIView.get_shipment_detail(sh_id, user))
             else:
                 print(">>> shipment id {} already exists".format(sh_id))
         print(">>>> final response >>>", shipments)

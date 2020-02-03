@@ -3,12 +3,14 @@ import os
 from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
+from .models import Retailer
 
 
 def check_auth(f):
     def wrapper(cls, request, *args, **kwargs):
         if os.stat("retailer/access_token.txt").st_size == 0:
-            if get_bearer_token():
+            obj_retailer = Retailer.objects.get(email=request.user.email)
+            if get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret):
                 return f(cls, request, *args, **kwargs)
             else:
                 return HttpResponse("Authentication Failed..Please try again")
