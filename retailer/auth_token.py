@@ -17,3 +17,9 @@ def get_bearer_token():
         return False
 
 
+def read_bearer_token():
+    with open('retailer/access_token.txt', 'r') as tk:
+        token = tk.read()
+    return token
+
+

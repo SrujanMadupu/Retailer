@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
 import logging
@@ -17,6 +18,7 @@ from .. models import Retailer
 from .. forms import RetailerForm
 from .. serializers import RetailerSerializer
 from .. bolo_logger import log_bolo
+from ..decorators import check_post_keys
 
 
 class RetailerViewSet(ModelViewSet):
@@ -42,12 +44,17 @@ class RetailerViewSet(ModelViewSet):
             log_bolo.error(str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def retrieve(self, request, *args, **kwargs):
-        """ Get a TblUser details """
+
+class RetailerAPIView(APIView):
+
+    @check_post_keys(required_keys=('name', 'email', 'password', 'client_id', 'client_secret'))
+    def post(self, request, *args, **kwargs):
         try:
-            ouser = Retailer.objects.get(id=kwargs['pk'])
-            serializer = RetailerSerializer(ouser)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            obj_retailer = Retailer(**request.data)
+            obj_retailer.save()
+            auth_user = User.objects.create_user(username=obj_retailer.email,
+                                                 email=obj_retailer.email, password=obj_retailer.password)
+            return Response({"message": "Retailer {}, created successfully".format(obj_retailer.name)}, status=status.HTTP_200_OK)
         except Exception as e:
             log_bolo.error(str(e))
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -39,7 +39,31 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'retailer',
     'rest_framework',
+    'django_rq',
 ]
+
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'PASSWORD': 'bolo',
+        'DEFAULT_TIMEOUT': 360,
+    },
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'retailer.throttles.ShipmentRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/day',
+        'user': '7/minute',
+        'shipment': '7/minute',
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

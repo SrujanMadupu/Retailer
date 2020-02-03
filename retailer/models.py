@@ -14,9 +14,8 @@ class Retailer(models.Model):
 
 
 class Shipment(models.Model):
-    shipmentId = models.IntegerField(unique=True)
+    shipmentId = models.IntegerField()
     shipmentDate = models.DateTimeField()
-    transportId = models.IntegerField()
     retailer = models.ForeignKey('Retailer', related_name='shipments', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -60,6 +59,7 @@ class CustomerDetails(models.Model):
     city = models.CharField(max_length=30)
     countryCode = models.CharField(max_length=5)
     email = models.EmailField()
+    company = models.CharField(max_length=35, default="")
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
 
     def __str__(self):
