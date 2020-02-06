@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views.auth_user import AuthUserView
-from .views.shipments import ShipmentAPIView, ShipmentViewSet
+from .views.shipments import ShipmentViewSet
+from .views.api_queue import ShipmentAPIView
 from .views.retailer import RetailerViewSet, RetailerAPIView
 
 router = DefaultRouter()
