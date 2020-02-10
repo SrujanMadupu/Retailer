@@ -1,5 +1,6 @@
 # Stdlib imports
 import requests
+from time import time, sleep
 
 # Core Django imports
 from django.db import transaction, DatabaseError
@@ -37,7 +38,9 @@ def get_shipment_detail(shipment_id, user_email):
 
 def get_shipment(url, method, headers, user_email):
     """requesting third party api for shipments"""
+    max_call_rate = 60
     page = 1
+    start_time = time()
     while page:
         new_url = url+"?page="+str(page)+"&fulfilment-method="+method
         print(">>> for page {}, url {}".format(page, new_url))
@@ -51,12 +54,21 @@ def get_shipment(url, method, headers, user_email):
             res = requests.get(url=new_url, headers=headers, verify=False)
             page = page + 1
             yield res.json()
-        elif len(res_json) > 0:
+        elif res.status_code == 429:
+            end_time = time()
+            sleep_time = max_call_rate-(end_time - start_time)
+            print("sleeping for >>> ", sleep_time)
+            sleep(sleep_time)
+            start_time = time()
+            continue
+        elif res.status_code == 200 and len(res_json) > 0:
             yield res_json
             page = page + 1
             continue
-        else:
-            raise StopIteration
+        elif res.status_code == 200 and len(res_json) == 0:
+            break
+    print(">>> got {} set, raising stopIteration")
+    raise StopIteration
 
 
 def save_shipments(data, user_email):
