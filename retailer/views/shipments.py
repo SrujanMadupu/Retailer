@@ -14,6 +14,8 @@ from ..auth_token import get_bearer_token, read_bearer_token
 from ..models import *
 from ..serializers import ShipmentSerializer
 
+max_call_rate = 60
+
 
 class ShipmentViewSet(ModelViewSet):
     queryset = Shipment.objects.all()
@@ -32,13 +34,14 @@ def get_shipment_detail(shipment_id, user_email):
         headers.update({'Authorization': 'Bearer ' + str(read_bearer_token())})
         res = requests.get(url=url, headers=headers, verify=False)
         return res.json()
+    elif res.status_code == 429:
+        return {}
     else:
         return res.json()
 
 
 def get_shipment(url, method, headers, user_email):
     """requesting third party api for shipments"""
-    max_call_rate = 60
     page = 1
     start_time = time()
     while page:
@@ -122,11 +125,19 @@ def get_util(user_email):
 
 def shipment_details_util(shipment_ids, user_email):
     shipments = {'shipments': []}
-    for sh_id in shipment_ids:
-        if Shipment.objects.filter(shipmentId=sh_id).exists():
-            shipments['shipments'].append(get_shipment_detail(sh_id, user_email))
+    start_time = time()
+    while len(shipment_ids) > 0:
+        sh_id = shipment_ids[0]
+        sh_details = get_shipment_detail(sh_id, user_email)
+        if len(sh_details) == 0:
+            end_time = time()
+            sleep_time = max_call_rate-(end_time-start_time)
+            print(">>>sleeping for >>", sleep_time)
+            sleep(sleep_time)
+            start_time = time()
         else:
-            print(">>> shipment id {} already exists".format(sh_id))
+            shipments['shipments'].append(sh_details)
+            shipment_ids.pop(0)
     print(">>>> final response >>>", shipments)
     return shipments
 
