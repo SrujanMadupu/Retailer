@@ -12,7 +12,8 @@ from rest_framework.viewsets import ModelViewSet
 from ..credentials import api_url
 from ..auth_token import get_bearer_token, read_bearer_token
 from ..models import *
-from ..serializers import ShipmentSerializer
+from ..serializers import ShipmentSerializer, ShipmentItemSerializer, TransportSerializer, \
+    CustomerDetailsSerializer, BillingDetailsSerializer
 
 max_call_rate = 60
 
@@ -84,20 +85,39 @@ def save_shipments(data, user_email):
                 customer_details = shipment.pop('customerDetails')
                 billing_details = shipment.pop('billingDetails')
                 obj_retailer = Retailer.objects.get(email=user_email)
-                obj_shipment = Shipment(**shipment)
-                obj_shipment.retailer = obj_retailer
-                obj_shipment.save()
+                shipment.update({'retailer': obj_retailer.id})
+                shipment_serializer = ShipmentSerializer(data=shipment)
+
+                # saving shipment
+                if shipment_serializer.is_valid():
+                    print(">>> shipment serializer is valid")
+                    obj_shipment = shipment_serializer.save()
+
+                # saving shipment items
                 for item in shipment_items:
-                    obj_shipment.shipmentitems.create(**item)
-                obj_transport = Transport(**transport)
-                obj_transport.shipment = obj_shipment
-                obj_transport.save()
-                obj_cust = CustomerDetails(**customer_details)
-                obj_cust.shipment = obj_shipment
-                obj_cust.save()
-                obj_billing = BillingDetails(**billing_details)
-                obj_billing.shipment = obj_shipment
-                obj_billing.save()
+                    item.update({'shipment': obj_shipment.id})
+                    sh_item_serializer = ShipmentItemSerializer(data=item)
+                    if sh_item_serializer.is_valid():
+                        sh_item_serializer.save()
+
+                # saving transport of shipment
+                transport.update({'shipment': obj_shipment.id})
+                transport_serializer = TransportSerializer(data=transport)
+                if transport_serializer.is_valid():
+                    transport_serializer.save()
+
+                # saving customer details of shipment
+                customer_details.update({'shipment': obj_shipment.id})
+                cust_serializer = CustomerDetailsSerializer(data=customer_details)
+                if cust_serializer.is_valid():
+                    cust_serializer.save()
+
+                # saving billing details of shipment
+                billing_details.update({'shipment': obj_shipment.id})
+                bill_details_serializer = BillingDetailsSerializer(data=billing_details)
+                if bill_details_serializer.is_valid():
+                    bill_details_serializer.save()
+
     except (DatabaseError, KeyError, TypeError) as e:
         raise e
 
@@ -118,7 +138,7 @@ def get_util(user_email):
         shipment_gen = get_shipment(url, method, headers, user_email)
         for sh in shipment_gen:
             shipment_ids += [record['shipmentId'] for record in sh['shipments']]
-            print(">>> for method {0} shipments {1}".format(method, shipment_ids))
+        print(">>> for method {0} shipments {1}".format(method, shipment_ids))
         del shipment_gen
     return shipment_ids
 
