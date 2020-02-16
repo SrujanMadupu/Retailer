@@ -1,6 +1,4 @@
 from django.db import models
-from .managers import ShipmentManager, ShipmentItemManager, TransportManager,\
-    CustomerDetailsManager, BillingDetailsManager
 
 
 # Create your models here.
@@ -20,7 +18,6 @@ class Shipment(models.Model):
     shipmentDate = models.DateTimeField()
     shipmentReference = models.CharField(max_length=25, default="")
     retailer = models.ForeignKey('Retailer', related_name='shipments', on_delete=models.CASCADE)
-    objects = ShipmentManager()
 
     def __str__(self):
         return str(self.shipmentId)
@@ -38,7 +35,6 @@ class ShipmentItem(models.Model):
     offerCondition = models.CharField(max_length=10)
     fulfilmentMethod = models.CharField(max_length=3)
     shipment = models.ForeignKey('Shipment', related_name='shipmentitems', on_delete=models.CASCADE)
-    objects = ShipmentItemManager()
 
     def __str__(self):
         return str(self.orderItemId)
@@ -49,7 +45,6 @@ class Transport(models.Model):
     transporterCode = models.CharField(max_length=10)
     trackAndTrace = models.CharField(max_length=10)
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
-    objects = TransportManager()
 
     def __str__(self):
         return str(self.transportId)
@@ -68,7 +63,6 @@ class CustomerDetails(models.Model):
     company = models.CharField(max_length=35, default="")
     houseNumberExtended = models.CharField(max_length=50, default="")
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
-    objects = CustomerDetailsManager()
 
     def __str__(self):
         return "{0} {1}".format(self.firstName, self.surname)
@@ -85,7 +79,6 @@ class BillingDetails(models.Model):
     countryCode = models.CharField(max_length=5)
     email = models.EmailField()
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
-    objects = BillingDetailsManager()
 
     def __str__(self):
         return "{0} {1}".format(self.firstName, self.surname)

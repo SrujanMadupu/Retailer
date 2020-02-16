@@ -1,78 +1,55 @@
+# Third-party app imports
 from rest_framework import serializers
+
+# Imports from my apps
 from .models import Retailer, Shipment, ShipmentItem, Transport, CustomerDetails, BillingDetails
 
 
 class RetailerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Retailer
-        fields = ('id', 'name', 'email')
+        fields = '__all__'
+        extra_kwargs = {
+            'client_id': {'write_only': True},
+            'client_secret': {'write_only': True},
+            'password': {'write_only': True}
+        }
 
 
 class ShipmentItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShipmentItem
-        fields = ('id', 'orderItemId', 'orderId', 'orderDate', 'latestDeliveryDate', 'ean',
-                  'title', 'quantity', 'offerPrice', 'offerCondition', 'fulfilmentMethod',
-                  'shipment')
-
-    def create(self, validated_data):
-        return ShipmentItem.objects.create(**validated_data)
-
-    def validate(self, attrs):
-        print(">>> attrs", attrs)
-        return attrs
-
-
-class ShipmentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Shipment
-        fields = ('id', 'shipmentId', 'shipmentDate', 'shipmentReference', 'retailer')
-
-    def create(self, validated_data):
-        return Shipment.objects.create(**validated_data)
-
-    def validate(self, attrs):
-        print(">>> attrs", attrs)
-        return attrs
+        fields = '__all__'
 
 
 class TransportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transport
-        fields = ('id', 'transportId', 'transporterCode', 'trackAndTrace', 'shipment')
+        fields = '__all__'
 
-    def create(self, validated_data):
-        return Transport.objects.create(**validated_data)
 
-    def validate(self, attrs):
-        print(">>> attrs", attrs)
-        return attrs
+class ShipmentSerializer(serializers.ModelSerializer):
+    retailer_name = serializers.CharField(source='retailer.name', read_only=True)
+    shipment_items = ShipmentItemSerializer(source='shipmentitems', many=True, read_only=True)
+    shipment_transport = TransportSerializer(source='transport', read_only=True)
+
+    class Meta:
+        model = Shipment
+        fields = ('retailer_name', 'shipmentId', 'shipmentDate', 'shipmentReference', 'shipment_items',
+                  'shipment_transport', 'retailer')
+        extra_fields = {
+            'retailer': {'write_only': True}
+        }
 
 
 class CustomerDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerDetails
-        fields = ('id', 'salutationCode', 'firstName', 'surname', 'streetName',
-                  'houseNumber', 'zipCode', 'city', 'countryCode', 'email', 'company',
-                  'houseNumberExtended', 'shipment')
-
-    def create(self, validated_data):
-        return CustomerDetails.objects.create(**validated_data)
-
-    def validate(self, attrs):
-        return attrs
+        fields = '__all__'
 
 
 class BillingDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingDetails
-        fields = ('id', 'salutationCode', 'firstName', 'surname', 'streetName',
-                  'houseNumber', 'zipCode', 'city', 'countryCode', 'email', 'shipment')
-
-    def create(self, validated_data):
-        return BillingDetails.objects.create(**validated_data)
-
-    def validate(self, attrs):
-        return attrs
+        fields = '__all__'
 
