@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework import status
 import django_rq as rq
+import pika
 
 # Imports from my apps
 from .views.shipment_util import *
@@ -16,16 +17,24 @@ from .views.shipment_util import *
 def fetch_shipments(f):
     def wrapper(cls, request, *args, **kwargs):
         user_email = request.user.email
-        job1 = rq.enqueue(get_util, user_email)
-        while not job1.is_finished:
-            sleep(1)
-        print(">>>> job1 result >>>", job1.result)
-        job2 = rq.enqueue(shipment_details_util, job1.result, user_email)
-        while not job2.is_finished:
-            sleep(1)
-        print(">>>> job2 result >>>", job2.result)
-        job3 = rq.enqueue(save_shipments_util, job2.result, user_email)
+        parameters = pika.URLParameters('amqp://srujan:srujan123@localhost:5672')
+        conn = pika.BlockingConnection(parameters)
+        ch = conn.channel()
+        ch.queue_declare(queue='retailer')
+        ch.basic_publish(exchange='', routing_key='retailer', body=user_email)
+        print(">>> sent retailer email, to fetch data <<<")
+        conn.close()
         return f(cls, request, *args, **kwargs)
+        # job1 = rq.enqueue(get_util, user_email)
+        # while not job1.is_finished:
+        #     sleep(1)
+        # print(">>>> job1 result >>>", job1.result)
+        # job2 = rq.enqueue(shipment_details_util, job1.result, user_email)
+        # while not job2.is_finished:
+        #     sleep(1)
+        # print(">>>> job2 result >>>", job2.result)
+        # job3 = rq.enqueue(save_shipments_util, job2.result, user_email)
+        # return f(cls, request, *args, **kwargs)
     return wrapper
 
 

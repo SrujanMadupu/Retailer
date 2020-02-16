@@ -69,47 +69,47 @@ def get_shipment(url, method, headers, user_email):
     raise StopIteration
 
 
-def save_shipments(data, user_email):
+def save_shipments(shipment, user_email):
     """saving collected shipments data"""
     try:
         with transaction.atomic():
-            for shipment in data['shipments']:
-                shipment_items = shipment.pop('shipmentItems')
-                transport = shipment.pop('transport')
-                customer_details = shipment.pop('customerDetails')
-                billing_details = shipment.pop('billingDetails')
-                obj_retailer = Retailer.objects.get(email=user_email)
+            # for shipment in data['shipments']:
+            shipment_items = shipment.pop('shipmentItems')
+            transport = shipment.pop('transport')
+            customer_details = shipment.pop('customerDetails')
+            billing_details = shipment.pop('billingDetails')
+            obj_retailer = Retailer.objects.get(email=user_email)
 
-                # saving shipment
-                shipment.update({'retailer': obj_retailer.id})
-                shipment_serializer = ShipmentSerializer(data=shipment)
-                if shipment_serializer.is_valid():
-                    obj_shipment = shipment_serializer.save()
+            # saving shipment
+            shipment.update({'retailer': obj_retailer.id})
+            shipment_serializer = ShipmentSerializer(data=shipment)
+            if shipment_serializer.is_valid():
+                obj_shipment = shipment_serializer.save()
 
-                # saving shipment items
-                for item in shipment_items:
-                    item.update({'shipment': obj_shipment.id})
-                    sh_item_serializer = ShipmentItemSerializer(data=item)
-                    if sh_item_serializer.is_valid():
-                        sh_item_serializer.save()
+            # saving shipment items
+            for item in shipment_items:
+                item.update({'shipment': obj_shipment.id})
+                sh_item_serializer = ShipmentItemSerializer(data=item)
+                if sh_item_serializer.is_valid():
+                    sh_item_serializer.save()
 
-                # saving transport of shipment
-                transport.update({'shipment': obj_shipment.id})
-                transport_serializer = TransportSerializer(data=transport)
-                if transport_serializer.is_valid():
-                    transport_serializer.save()
+            # saving transport of shipment
+            transport.update({'shipment': obj_shipment.id})
+            transport_serializer = TransportSerializer(data=transport)
+            if transport_serializer.is_valid():
+                transport_serializer.save()
 
-                # saving customer details of shipment
-                customer_details.update({'shipment': obj_shipment.id})
-                cust_serializer = CustomerDetailsSerializer(data=customer_details)
-                if cust_serializer.is_valid():
-                    cust_serializer.save()
+            # saving customer details of shipment
+            customer_details.update({'shipment': obj_shipment.id})
+            cust_serializer = CustomerDetailsSerializer(data=customer_details)
+            if cust_serializer.is_valid():
+                cust_serializer.save()
 
-                # saving billing details of shipment
-                billing_details.update({'shipment': obj_shipment.id})
-                bill_details_serializer = BillingDetailsSerializer(data=billing_details)
-                if bill_details_serializer.is_valid():
-                    bill_details_serializer.save()
+            # saving billing details of shipment
+            billing_details.update({'shipment': obj_shipment.id})
+            bill_details_serializer = BillingDetailsSerializer(data=billing_details)
+            if bill_details_serializer.is_valid():
+                bill_details_serializer.save()
 
     except (DatabaseError, KeyError, TypeError) as e:
         raise e
@@ -136,25 +136,25 @@ def get_util(user_email):
     return shipment_ids
 
 
-def shipment_details_util(shipment_ids, user_email):
-    shipments = {'shipments': []}
+def shipment_details_util(sh_id, user_email):
+    # shipments = {'shipments': []}
     start_time = time()
-    while len(shipment_ids) > 0:
-        sh_id = shipment_ids[0]
-        sh_details = get_shipment_detail(sh_id, user_email)
-        if len(sh_details) == 0:
-            end_time = time()
-            sleep_time = MAX_CALL_RATE-(end_time-start_time)
-            print(">>>sleeping for >>", sleep_time)
-            sleep(sleep_time)
-            start_time = time()
-        else:
-            shipments['shipments'].append(sh_details)
-            shipment_ids.pop(0)
-    print(">>>> final response >>>", shipments)
-    return shipments
+    # while len(shipment_ids) > 0:
+    #     sh_id = shipment_ids[0]
+    sh_details = get_shipment_detail(sh_id, user_email)
+    if len(sh_details) == 0:
+        end_time = time()
+        sleep_time = MAX_CALL_RATE-(end_time-start_time)
+        print(">>>sleeping for >>", sleep_time)
+        sleep(sleep_time)
+        start_time = time()
+    # else:
+    #     shipments['shipments'].append(sh_details)
+    #     # shipment_ids.pop(0)
+    # print(">>>> final response >>>", shipments)
+    return sh_details
 
 
-def save_shipments_util(shipments, user_email):
-    save_shipments(shipments, user_email)
+def save_shipments_util(shipment, user_email):
+    save_shipments(shipment, user_email)
     return {"message": "Successfully saved shipments"}
