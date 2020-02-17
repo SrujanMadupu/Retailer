@@ -2,12 +2,6 @@ from django.conf import settings
 import os
 import json
 import pika
-import django
-from django.conf import settings
-settings.configure()
-os.environ['DJANGO_SETTINGS_MODULE'] = '.. settings'
-django.setup()
-
 from .views.shipment_util import get_util, shipment_details_util, save_shipments_util
 
 parameters = pika.URLParameters('amqp://srujan:srujan123@localhost:5672')
