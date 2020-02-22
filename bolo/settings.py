@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'retailer',
     'rest_framework',
+    'django_celery_results',
     'django_rq',
 ]
 
@@ -97,18 +98,18 @@ WSGI_APPLICATION = 'bolo.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
     # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'retailer_dev2',
-    #     'USER': 'root',
-    #     'PASSWORD': 'Mobigo#123',
-    #     'HOST': '127.0.0.1',
-    #     'PORT': 3306,
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'retailer_dev2',
+        'USER': 'root',
+        'PASSWORD': 'Mobigo#123',
+        'HOST': '127.0.0.1',
+        'PORT': 3306,
+    }
 }
 
 
@@ -149,3 +150,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+CELERY_BROKER_URL = 'amqp://srujan:srujan123@localhost:5672'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+# CELERY_IMPORTS = (
+#     'bolo.tasks',
+# )

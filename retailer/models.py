@@ -82,3 +82,12 @@ class BillingDetails(models.Model):
 
     def __str__(self):
         return "{0} {1}".format(self.firstName, self.surname)
+
+
+class AuthUser(models.Model):
+    email = models.EmailField()
+    logged_in = models.DateTimeField()
+    logged_out = models.DateTimeField(default="")
+
+    def __str__(self):
+        return "{0} {1}".fromat(self.email, self.logged_in)
