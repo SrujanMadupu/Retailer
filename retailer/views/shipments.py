@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.viewsets import ModelViewSet
 
 # Imports from my apps
-from ..decorators import check_auth, fetch_shipments
+# from ..decorators import check_auth, fetch_shipments
 from ..models import Shipment
 from ..throttles import ShipmentRateThrottle
 from ..serializers import ShipmentSerializer
@@ -20,7 +20,7 @@ class ShipmentViewSet(ModelViewSet):
     throttle_classes = [ShipmentRateThrottle]
 
     @method_decorator(login_required)
-    @check_auth
-    @fetch_shipments
+    # @check_auth
+    # @fetch_shipments
     def list(self, request, *args, **kwargs):
         return super().list(request)

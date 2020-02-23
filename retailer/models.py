@@ -42,8 +42,8 @@ class ShipmentItem(models.Model):
 
 class Transport(models.Model):
     transportId = models.IntegerField()
-    transporterCode = models.CharField(max_length=10)
-    trackAndTrace = models.CharField(max_length=10)
+    transporterCode = models.CharField(max_length=35)
+    trackAndTrace = models.CharField(max_length=35, default="")
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -55,10 +55,10 @@ class CustomerDetails(models.Model):
     firstName = models.CharField(max_length=35)
     surname = models.CharField(max_length=35)
     streetName = models.CharField(max_length=30)
-    houseNumber = models.CharField(max_length=10)
-    zipCode = models.CharField(max_length=10)
+    houseNumber = models.CharField(max_length=30)
+    zipCode = models.CharField(max_length=15)
     city = models.CharField(max_length=30)
-    countryCode = models.CharField(max_length=5)
+    countryCode = models.CharField(max_length=10)
     email = models.EmailField()
     company = models.CharField(max_length=35, default="")
     houseNumberExtended = models.CharField(max_length=50, default="")
@@ -69,25 +69,16 @@ class CustomerDetails(models.Model):
 
 
 class BillingDetails(models.Model):
-    salutationCode = models.CharField(max_length=5)
+    salutationCode = models.CharField(max_length=35)
     firstName = models.CharField(max_length=35)
     surname = models.CharField(max_length=35)
     streetName = models.CharField(max_length=30)
-    houseNumber = models.CharField(max_length=10)
+    houseNumber = models.CharField(max_length=30)
     zipCode = models.CharField(max_length=10)
-    city = models.CharField(max_length=30)
-    countryCode = models.CharField(max_length=5)
+    city = models.CharField(max_length=35)
+    countryCode = models.CharField(max_length=10)
     email = models.EmailField()
     shipment = models.OneToOneField('Shipment', on_delete=models.CASCADE)
 
     def __str__(self):
         return "{0} {1}".format(self.firstName, self.surname)
-
-
-class AuthUser(models.Model):
-    email = models.EmailField()
-    logged_in = models.DateTimeField()
-    logged_out = models.DateTimeField(default="")
-
-    def __str__(self):
-        return "{0} {1}".fromat(self.email, self.logged_in)

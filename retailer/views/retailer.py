@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 from .. models import Retailer
 from .. serializers import RetailerSerializer
 from .. bolo_logger import log_bolo
-from ..decorators import check_post_keys
 
 
 class RetailerViewSet(ModelViewSet):
