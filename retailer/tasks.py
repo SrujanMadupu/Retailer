@@ -11,12 +11,11 @@ from celery.result import AsyncResult
 import requests
 
 # Imports from my apps
-from .decorators import read_bearer_token, get_bearer_token
+from .auth_token import read_bearer_token, get_bearer_token
 from .credentials import api_url
 from .serializers import *
 from .bolo_logger import log_bolo
 
-MAX_CALL_RATE = 60
 # Create your tasks here
 
 
@@ -69,26 +68,10 @@ def get_shipment_util(url, method, headers, user_email):
         res = requests.get(url=new_url, headers=headers, verify=False)
         res_json = res.json()
         if res.status_code == 401 or res.status_code == 429:
-            # get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
             page += 1
             # call_for_shipment.apply_async(args=[new_url, user_email], kwargs={'countdown': 1})
             call_for_shipment.delay(new_url, user_email)
-            # headers.update({'Authorization': 'Bearer ' + str(read_bearer_token())})
-            # res = requests.get(url=new_url, headers=headers, verify=False)
-            # yield res.json()
-            # elif res.status_code == 429:
-            #     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            #     page += 1
-            # end_time = time()
-            # sleep_time = MAX_CALL_RATE-(end_time - start_time)
-            # print("sleeping for >>> ", sleep_time)
-            # sleep(sleep_time)
-            # start_time = time()
-            # call_for_shipment.apply_async(args=[new_url, user_email],
-            #                               kwargs={'countdown': res.headers.get('retry-after', 10)})
-            # call_for_shipment.delay(new_url, user_email)
         elif res.status_code == 200 and len(res_json) > 0:
-            # create_shipment(res_json['shipments'], obj_retailer.id)
             for record in res_json['shipments']:
                 Shipment.objects.create(shipmentId=record['shipmentId'],
                                         shipmentDate=record['shipmentDate'],
@@ -109,17 +92,8 @@ def get_shipment(user_email):
     url = api_url + '/retailer/shipments'
     headers = {'Accept': 'application/vnd.retailer.v3+json',
                'Authorization': 'Bearer ' + str(read_bearer_token())}
-    # shipment_ids = []
     for method in ff_methods:
         get_shipment_util(url, method, headers, user_email)
-    #     for sh in shipment_gen:
-    #         for record in sh['shipments']:
-    #             Shipment.objects.create(shipmentId=record['shipmentId'],
-    #                                     shipmentDate=record['shipmentDate'],
-    #                                     retailer_id=obj_retailer.id)
-    #             shipment_ids += [record['shipmentId']]
-    #     del shipment_gen
-    # return shipment_ids
 
 
 def get_shipment_detail_util(shipment_id, user_email):
@@ -131,9 +105,6 @@ def get_shipment_detail_util(shipment_id, user_email):
     if res.status_code == 401:
         obj_retailer = Retailer.objects.get(email=user_email)
         get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
-        # headers.update({'Authorization': 'Bearer ' + str(read_bearer_token())})
-        # res = requests.get(url=url, headers=headers, verify=False)
-        # return res.json()
         print(">>>> Got AuthorizationException <<<<")
         raise AuthorizationException("2")
     elif res.status_code == 429:
@@ -147,7 +118,6 @@ def save_shipments(shipment, user_email, pk):
     """saving collected shipments data"""
     try:
         with transaction.atomic():
-            # for shipment in data['shipments']:
 
             if 'shipmentItems' in shipment:
                 shipment_items = shipment.pop('shipmentItems')

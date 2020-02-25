@@ -7,7 +7,6 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
 
 # Imports from your apps
 from .. models import Retailer
