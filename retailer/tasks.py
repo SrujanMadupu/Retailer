@@ -1,21 +1,23 @@
-# Create your tasks here
+# Stdlib imports
 from __future__ import absolute_import, unicode_literals
-import json
-from celery import shared_task, task
+from time import time
+
+# Core Django imports
+from django.db import transaction, DatabaseError
+
+# Third-party app imports
+from celery import task
 from celery.result import AsyncResult
-from celery.signals import task_success, after_task_publish
-from retailer.models import Retailer
+import requests
+
+# Imports from my apps
 from .decorators import read_bearer_token, get_bearer_token
 from .credentials import api_url
-import requests
-from time import time, sleep
-from .models import Shipment
-from django.db import transaction, DatabaseError
 from .serializers import *
-from bolo.celery import app
 from .bolo_logger import log_bolo
 
 MAX_CALL_RATE = 60
+# Create your tasks here
 
 
 class RateLimitException(Exception):
@@ -36,7 +38,7 @@ def create_shipment(url, email):
     res = requests.get(url=url, headers=headers, verify=False)
     res_json = res.json()
     if res.status_code == 401:
-        print(">>>> Got AuthorizationException")
+        print(">>>> Got AuthorizationException <<<<")
         get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
         raise AuthorizationException("2")
     elif res.status_code == 429:
@@ -60,16 +62,13 @@ def call_for_shipment(new_url, user_email):
 def get_shipment_util(url, method, headers, user_email):
     """requesting third party api for shipments"""
     page = 1
-    start_time = time()
     obj_retailer = Retailer.objects.get(email=user_email)
     while page:
         new_url = url+"?page="+str(page)+"&fulfilment-method="+method
         print(">>> for page {}, url {}".format(page, new_url))
         res = requests.get(url=new_url, headers=headers, verify=False)
         res_json = res.json()
-        print(res_json)
         if res.status_code == 401 or res.status_code == 429:
-            print(">>>>>>>>>>>>>>>>>>>>>>>>")
             # get_bearer_token(obj_retailer.client_id, obj_retailer.client_secret)
             page += 1
             # call_for_shipment.apply_async(args=[new_url, user_email], kwargs={'countdown': 1})
@@ -149,46 +148,50 @@ def save_shipments(shipment, user_email, pk):
     try:
         with transaction.atomic():
             # for shipment in data['shipments']:
-            shipment_items = shipment.pop('shipmentItems')
-            transport = shipment.pop('transport')
-            customer_details = shipment.pop('customerDetails')
-            billing_details = shipment.pop('billingDetails')
 
-            # saving shipment items
-            for item in shipment_items:
-                item.update({'shipment': pk})
-                sh_item_serializer = ShipmentItemSerializer(data=item)
-                if sh_item_serializer.is_valid():
-                    sh_item_serializer.save()
+            if 'shipmentItems' in shipment:
+                shipment_items = shipment.pop('shipmentItems')
+                # saving shipment items
+                for item in shipment_items:
+                    item.update({'shipment': pk})
+                    sh_item_serializer = ShipmentItemSerializer(data=item)
+                    if sh_item_serializer.is_valid():
+                        sh_item_serializer.save()
+                    else:
+                        log_bolo.error(sh_item_serializer.errors)
+
+            if 'transport' in shipment:
+                transport = shipment.pop('transport')
+                # saving transport of shipment
+                transport.update({'shipment': pk})
+                transport_serializer = TransportSerializer(data=transport)
+                if transport_serializer.is_valid():
+                    transport_serializer.save()
                 else:
-                    log_bolo.error(sh_item_serializer.errors)
+                    print(transport_serializer.errors)
+                    log_bolo.error(transport_serializer.errors)
 
-            # saving transport of shipment
-            transport.update({'shipment': pk})
-            transport_serializer = TransportSerializer(data=transport)
-            if transport_serializer.is_valid():
-                transport_serializer.save()
-            else:
-                print(transport_serializer.errors)
-                log_bolo.error(transport_serializer.errors)
+            if 'customerDetails' in shipment:
+                customer_details = shipment.pop('customerDetails')
+                # saving customer details of shipment
+                customer_details.update({'shipment': pk})
+                cust_serializer = CustomerDetailsSerializer(data=customer_details)
+                if cust_serializer.is_valid():
+                    cust_serializer.save()
+                else:
+                    print(cust_serializer.errors)
+                    log_bolo.error(cust_serializer.errors)
 
-            # saving customer details of shipment
-            customer_details.update({'shipment': pk})
-            cust_serializer = CustomerDetailsSerializer(data=customer_details)
-            if cust_serializer.is_valid():
-                cust_serializer.save()
-            else:
-                print(cust_serializer.errors)
-                log_bolo.error(cust_serializer.errors)
-
-            # saving billing details of shipment
-            billing_details.update({'shipment': pk})
-            bill_details_serializer = BillingDetailsSerializer(data=billing_details)
-            if bill_details_serializer.is_valid():
-                bill_details_serializer.save()
-            else:
-                print(bill_details_serializer.errors)
-                log_bolo.error(bill_details_serializer.errors)
+            if 'billingDetails' in shipment:
+                # saving billing details of shipment
+                billing_details = shipment.pop('billingDetails')
+                billing_details.update({'shipment': pk})
+                bill_details_serializer = BillingDetailsSerializer(data=billing_details)
+                if bill_details_serializer.is_valid():
+                    bill_details_serializer.save()
+                else:
+                    print(bill_details_serializer.errors)
+                    log_bolo.error(bill_details_serializer.errors)
 
     except (DatabaseError, KeyError, TypeError) as e:
         raise e

@@ -5,13 +5,13 @@ import requests
 # Core Django imports
 from django.db import transaction, DatabaseError
 
+# Third-party app imports
+
 # Imports from my apps
 from ..models import *
 from ..auth_token import get_bearer_token, read_bearer_token
 from ..serializers import *
 from ..credentials import api_url
-
-# Third-party app imports
 
 # Constants
 MAX_CALL_RATE = 60
